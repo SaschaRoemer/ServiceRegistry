@@ -30,29 +30,49 @@ public class ReplicationClient
         }
         .Union(
             _replicationContext.PeersUrl.Select(e =>
-                new Service((ServiceKey)"ServiceRegistry", (Location) e)
+                new Service((ServiceKey)"ServiceRegistry", (Location)e)
                 {
                     Time = _replicationContext.StartTime
                 }.ToString())
         );
 
-        using var content =
-            new StringContent(
-                JsonSerializer.Serialize(services),
-                Encoding.UTF8,
-                "application/json");
-
         _replicationContext.Replicate = true;
+        StringContent content = await Replicate(
+            _replicationContext.LocalUrl,
+            services);
+    }
 
-        var task = _client.PostAsync($"{_replicationContext.LocalUrl}/Registry", content);
+    public async void ReplicateRemote(IEnumerable<Location> remotes, Service[] services)
+    {
+        if (remotes == null)
+        {
+            return;
+        }
+
+        var servicesAsString =
+            services.Select(e => e.ToString());
+
+        foreach(var remote in remotes)
+        {
+            await Replicate(
+                remote.ToString(),
+                servicesAsString);
+        }
+    }
+
+    private async Task<StringContent> Replicate(string targetUrl, IEnumerable<string> services)
+    {
+        var content =
+                    new StringContent(
+                        JsonSerializer.Serialize(services),
+                        Encoding.UTF8,
+                        "application/json");
+
+        var task = _client.PostAsync($"{targetUrl}/Registry", content);
 
         var message = await task;
         string resp = await message.Content.ReadAsStringAsync();
         Console.Write(message);
-    }
-
-    public async void ReplicateRemote(Service[] services)
-    {
-        
+        return content;
     }
 }

@@ -16,8 +16,9 @@ public interface IServerRegistry
 public class ServerRegistry : IServerRegistry
 {
     private const string ServiceRegistryName = "ServiceRegistry";
-    // TODO Services as HashSet<Service>
-    private ConcurrentDictionary<ServiceKey, Service> _registry = new();
+    private static TimeSpan ServiceTimeout = TimeSpan.FromMinutes(2);
+
+    private ConcurrentDictionary<ServiceKey, HashSet<Service>> _registry = new();
     private ConcurrentDictionary<Location, Service> _locations = new();
 
     public ServerRegistry(
@@ -29,33 +30,68 @@ public class ServerRegistry : IServerRegistry
     {
         if (_locations.Remove(location, out var service))
         {
-            _registry.Remove(service.Key, out service);
+            var set = _registry[service.Key].Remove(service);
         }
     }
 
     public Service? GetService(ServiceKey key)
     {
-        return
-        _registry.TryGetValue(key, out var value)
-        ? value
-        : null;
+        if (_registry.TryGetValue(key, out var set))
+        {
+            var result =
+                set
+                .Where(e => (e.Time + ServiceTimeout) > DateTime.UtcNow)
+                .OrderBy(e => e.Calls)
+                .FirstOrDefault();
+            
+            if (result != null) result.Calls++;
+
+            return result;
+        }
+        
+        return null;
     }
 
     public void Register(Service service)
     {
-        service.Time = DateTime.UtcNow;
-        _registry[service.Key] = service;
         _locations[service.Location] = service;
+        if (!_registry.TryGetValue(service.Key, out var set))
+        {
+            set = new HashSet<Service>();
+            _registry[service.Key] = set;
+        }
+        set.Add(service);
     }
 
     public void Renew(Service service)
     {
-        // TODO Update time if service exists.
-        Register(service);
+        if (_registry.TryGetValue(service.Key, out var set))
+        {
+            if (set.TryGetValue(service, out var current))
+            {
+                if (current.Time < service.Time)
+                {
+                    current.Time = service.Time;
+                }
+            }
+        }
+        else
+        {
+            Register(service);
+        }
     }
 
     public void ReplicateRemote(IReplicationContext replicationContext)
     {
-        throw new NotImplementedException();
+        var services = _registry.SelectMany(e => e.Value);
+
+        var remotes = _registry[(ServiceKey)"ServiceRegistry"]
+            .Where(e => e.Location != (Location)replicationContext.LocalUrl)
+            .Select(e => e.Location);
+
+        new ReplicationClient(replicationContext)
+            .ReplicateRemote(
+                remotes,
+                services.ToArray());
     }
 }

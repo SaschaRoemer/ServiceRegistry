@@ -1,5 +1,5 @@
 
-public record Service
+public class Service : IEquatable<Service>
 {
     public Service(ServiceKey key, Location location)
     {
@@ -10,6 +10,7 @@ public record Service
     public ServiceKey Key { get; }
     public Location Location { get; }
     internal DateTime? Time { get; set; }
+    internal long Calls { get; set; }
     // TODO
     internal bool IsRegistry => Key.Name == "ServiceRegistry";
 
@@ -32,5 +33,31 @@ public record Service
     public override string ToString()
     {
         return $"{Key}@{Location}|{Time:O}";
+    }
+
+    public bool Equals(Service? other)
+    {
+        if (other == null) return false;
+
+        return other.Key == Key && other.Location == Location;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Service service
+        ? Equals(service)
+        : false;
+
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 23 + Key.GetHashCode();
+            hash = hash * 23 + Location.GetHashCode();
+            return hash;
+        }
     }
 }
