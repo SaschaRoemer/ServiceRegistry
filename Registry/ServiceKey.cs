@@ -16,7 +16,7 @@ public record ServiceKey
         var parts = value.Split("/");
         return parts.Length > 1
         ? new ServiceKey(parts[0], parts[1])
-        : new ServiceKey(null, parts[0]);
+        : new ServiceKey("GLOBAL", parts[0]);
     }
 
     public override string ToString()
