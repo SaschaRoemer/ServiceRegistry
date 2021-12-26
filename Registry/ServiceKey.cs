@@ -1,13 +1,13 @@
 
 public record ServiceKey
 {
-    public ServiceKey(string? environment, string name)
+    public ServiceKey(string environment, string name)
     {
         Environment = environment;
         Name = name;
     }
 
-    public string? Environment { get; set; }
+    public string Environment { get; set; }
 
     public string Name { get; set; }
 

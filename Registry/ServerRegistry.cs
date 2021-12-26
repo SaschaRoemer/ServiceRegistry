@@ -15,7 +15,6 @@ public interface IServerRegistry
 
 public class ServerRegistry : IServerRegistry
 {
-    private const string ServiceRegistryName = "ServiceRegistry";
     private static TimeSpan ServiceTimeout = TimeSpan.FromMinutes(2);
 
     private ConcurrentDictionary<ServiceKey, HashSet<Service>> _registry = new();
@@ -43,6 +42,8 @@ public class ServerRegistry : IServerRegistry
                 .Where(e => (e.Time + ServiceTimeout) > DateTime.UtcNow)
                 .OrderBy(e => e.Calls)
                 .FirstOrDefault();
+
+            // TODO increment the calls for offline services.
             
             if (result != null) result.Calls++;
 
@@ -85,7 +86,7 @@ public class ServerRegistry : IServerRegistry
     {
         var services = _registry.SelectMany(e => e.Value);
 
-        var remotes = _registry[(ServiceKey)"ServiceRegistry"]
+        var remotes = _registry[(ServiceKey)"GLOBAL/ServiceRegistry"]
             .Where(e => e.Location != (Location)replicationContext.LocalUrl)
             .Select(e => e.Location);
 

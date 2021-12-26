@@ -23,14 +23,14 @@ public class ReplicationClient
         // TODO Environment.
         var services = new[]
         {
-            new Service((ServiceKey)"ServiceRegistry", (Location)_replicationContext.LocalUrl)
+            new Service((ServiceKey)"GLOBAL/ServiceRegistry", (Location)_replicationContext.LocalUrl)
             {
                 Time = DateTime.UtcNow
             }.ToString()
         }
         .Union(
             _replicationContext.PeersUrl.Select(e =>
-                new Service((ServiceKey)"ServiceRegistry", (Location)e)
+                new Service((ServiceKey)"GLOBAL/ServiceRegistry", (Location)e)
                 {
                     Time = _replicationContext.StartTime
                 }.ToString())

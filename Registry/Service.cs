@@ -12,7 +12,7 @@ public class Service : IEquatable<Service>
     internal DateTime? Time { get; set; }
     internal long Calls { get; set; }
     // TODO
-    internal bool IsRegistry => Key.Name == "ServiceRegistry";
+    internal bool IsRegistry => Key.Name == "GLOBAL/ServiceRegistry";
 
     public static explicit operator Service(string value)
     {
