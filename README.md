@@ -1,6 +1,6 @@
 A playground project inspired by Netflix Eureka.
 
-ServiceRegistry is implmeneted in ASP.NET Core 6 Web API. It provides a RESTful interface where a service can register itself with name and location. Applications that require a service request the service location.
+ServiceRegistry is implemented in ASP.NET Core 6 Web API. It provides a RESTful interface where a service can register itself with name and location. Applications that require a service request the service location.
 
 
 ## Service registration and discovery
