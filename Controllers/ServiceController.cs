@@ -58,7 +58,7 @@ public class ServiceController : ControllerBase
     ///         }
     ///     }
     /// </remarks>
-    [HttpPost("{service}", Name = "PostService")]
+    [HttpPost(Name = "PostService")]
     public void Register(Service service)
     {
         _registry.Register(service);
@@ -69,7 +69,7 @@ public class ServiceController : ControllerBase
     /// Registered services must renew every minute. If a service fails to
     /// renew for two minutes it is considred offline.
     /// Services that are offline will not be returned by <see cref="GetService"/>.</summary>
-    [HttpPut("{service}", Name = "PutService")]
+    [HttpPut(Name = "PutService")]
     public void Renew(Service service)
     {
         _registry.Renew(service);
