@@ -9,20 +9,19 @@ public interface IServerRegistry
     void Renew(Service service);
     
     void Cancel(Location location);
-
-    void ReplicateRemote(IReplicationContext replicationContext);
 }
 
 public class ServerRegistry : IServerRegistry
 {
+    private ILogger<ServerRegistry> _logger;
     private static TimeSpan ServiceTimeout = TimeSpan.FromMinutes(2);
-
     private ConcurrentDictionary<ServiceKey, HashSet<Service>> _registry = new();
     private ConcurrentDictionary<Location, Service> _locations = new();
 
     public ServerRegistry(
         ILogger<ServerRegistry> logger)
     {
+        _logger = logger;
     }
 
     public void Cancel(Location location)
@@ -45,11 +44,15 @@ public class ServerRegistry : IServerRegistry
 
             // TODO increment the calls for offline services.
             
-            if (result != null) result.Calls++;
-
-            return result;
+            if (result != null)
+            {
+                result.Calls++;
+                _logger.LogService("GetService", "Service found", result);
+                return result;
+            }
         }
-        
+
+        _logger.LogService("GetService", "null", null);
         return null;
     }
 
@@ -58,10 +61,14 @@ public class ServerRegistry : IServerRegistry
         _locations[service.Location] = service;
         if (!_registry.TryGetValue(service.Key, out var set))
         {
+            _logger.LogService("Register", "New hashset", service);
+            service.Time = DateTime.UtcNow;
             set = new HashSet<Service>();
             _registry[service.Key] = set;
         }
+        
         set.Add(service);
+        _logger.LogService("Register", "Add service", service, set.Count);
     }
 
     public void Renew(Service service)
@@ -73,26 +80,16 @@ public class ServerRegistry : IServerRegistry
                 if (current.Time < service.Time)
                 {
                     current.Time = service.Time;
+                    _logger.LogService("Renew", "-", current);
+
+                    return;
                 }
             }
+            _logger.LogService("Renew", "Service not found", service);
         }
         else
         {
             Register(service);
         }
-    }
-
-    public void ReplicateRemote(IReplicationContext replicationContext)
-    {
-        var services = _registry.SelectMany(e => e.Value);
-
-        var remotes = _registry[(ServiceKey)"GLOBAL/ServiceRegistry"]
-            .Where(e => e.Location != (Location)replicationContext.LocalUrl)
-            .Select(e => e.Location);
-
-        new ReplicationClient(replicationContext)
-            .ReplicateRemote(
-                remotes,
-                services.ToArray());
     }
 }

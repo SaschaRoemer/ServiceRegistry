@@ -1,3 +1,4 @@
+namespace ServiceRegistry;
 
 public class Service : IEquatable<Service>
 {
@@ -9,10 +10,8 @@ public class Service : IEquatable<Service>
 
     public ServiceKey Key { get; }
     public Location Location { get; }
-    internal DateTime? Time { get; set; }
-    internal long Calls { get; set; }
-    // TODO
-    internal bool IsRegistry => Key.Name == "GLOBAL/ServiceRegistry";
+    public DateTime? Time { get; set; }
+    public long Calls { get; set; }
 
     public static explicit operator Service(string value)
     {
@@ -22,7 +21,7 @@ public class Service : IEquatable<Service>
 
         var partsB = partsA[1].Split('|');
         var location = (Location)partsB[0];
-        var time = DateTime.Parse(partsB[1]);
+        var time = partsB.Length > 1 ? DateTime.Parse(partsB[1]) : (DateTime?)null;
 
         return new Service(key, location)
         {

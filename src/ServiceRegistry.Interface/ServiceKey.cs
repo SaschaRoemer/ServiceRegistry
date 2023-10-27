@@ -1,4 +1,4 @@
-
+namespace ServiceRegistry;
 public record ServiceKey
 {
     public ServiceKey(string environment, string name)

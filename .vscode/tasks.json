@@ -2,26 +2,30 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "build",
+            "label": "build-serviceregistry",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/ServiceRegistry.csproj",
+                "${workspaceFolder}/src/ServiceRegistry/ServiceRegistry.csproj",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "/consoleloggerparameters:NoSummary",
+                "-o",
+                "${workspaceFolder}\\bin\\Debug\\ServiceRegistry"
             ],
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "publish",
+            "label": "build-echo",
             "command": "dotnet",
             "type": "process",
             "args": [
-                "publish",
-                "${workspaceFolder}/ServiceRegistry.csproj",
+                "build",
+                "${workspaceFolder}/src/Echo/Echo.csproj",
                 "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
+                "/consoleloggerparameters:NoSummary",
+                "-o",
+                "${workspaceFolder}\\bin\\Debug\\Echo"
             ],
             "problemMatcher": "$msCompile"
         },
@@ -32,7 +36,7 @@
             "args": [
                 "watch",
                 "run",
-                "${workspaceFolder}/ServiceRegistry.csproj",
+                "${workspaceFolder}/src/ServiceRegistry/ServiceRegistry.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

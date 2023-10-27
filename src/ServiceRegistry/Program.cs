@@ -1,6 +1,6 @@
 global using Microsoft.AspNetCore.Mvc;
-global using System.Collections.Concurrent;
 global using Microsoft.Extensions.Configuration;
+global using System.Collections.Concurrent;
 global using System.Net.Http;
 global using System.Net.Http.Headers;
 global using System.Linq;
@@ -12,6 +12,12 @@ global using ServiceRegistry;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.ConfigureLogging(logging =>
+{
+    logging.ClearProviders();
+    logging.AddConsole();
+});
 
 // Add services to the container.
 
@@ -28,16 +34,17 @@ builder.Services.AddSwaggerGen(options =>
 
 #region Services
 builder.Services.AddSingleton<IServerRegistry, ServerRegistry>();
-
-var replicationContext = new ReplicationContext(builder.Configuration);
-builder.Services.AddSingleton<IReplicationContext>(replicationContext);
 #endregion
 
 var app = builder.Build();
+var logger = app.Logger;
+
+foreach(var e in Environment.GetEnvironmentVariables()) { logger.LogInformation("{e}", e); }
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    logger.LogInformation("Starting Swagger.");
     app.UseSwagger();
     app.UseSwaggerUI();
 }
@@ -48,21 +55,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// app.MapControllerRoute(
-//     name: "default",
-//     pattern: "{controller=Home}/{action=Index}/{id?}");
-
-var replication = builder.Configuration.GetValue<string>("Replication").Split(';');
-
-var timer = new System.Threading.Timer(
-    (e) =>
-    {
-        new ReplicationClient(replicationContext).ReplicateLocal();
-    },
-    null,
-    TimeSpan.Zero,
-    TimeSpan.FromSeconds(1));
-
-app.Run(replication[0]);
-
-timer.Dispose();
+app.Run();

@@ -56,16 +56,3 @@ ServiceRegistry supports a basic replication as a peer-to-peer approach. An inst
 ### Registry endpoint
 
 * POST{service[]}: Receives a list of services and updates the internal list.
-
-
-### Persistence
-
-The internal list of services is only stored in memory. This is good for performance on one side but will lead to a loss of registered services if the web service goes offline. When the services goes online again it's data will be build-up as soon as services renew their registration.
-Through replication the registered services are retained as long as at least one peer is online.
-
-
-## Disclaimer
-
-This project aims to show the basics of service discovery, .NET 6 and Web API. Being without any kind of security this implementation is far from production ready. All actions like registering a service or replication is open to everyone wich makes it vulnerable even to the simplest attacs. There is no protection against registering a malicious service by a third party.
-
-Exception handling is another topic which is completely missing.

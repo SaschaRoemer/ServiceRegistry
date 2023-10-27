@@ -78,8 +78,8 @@ public class ServiceController : ControllerBase
 
     /// <summary>Set a service offline.</summary>
     [HttpDelete("{location}", Name = "DeleteService")]
-    public void Cancel(Location location)
+    public void Cancel(string location)
     {
-        _registry.Cancel(location);
+        _registry.Cancel((Location)System.Web.HttpUtility.UrlDecode(location));
     }
 }
