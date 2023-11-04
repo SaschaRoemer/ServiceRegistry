@@ -6,12 +6,16 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /App
 
 # copy csproj and restore as distinct layers
-COPY src/*.csproj .
-RUN dotnet restore --ucr
+COPY Echo/*.csproj Echo/
+COPY ServiceRegistry.Interface/*.csproj ServiceRegistry.Interface/
+
+RUN dotnet restore --ucr Echo/Echo.csproj
 
 # copy and publish app and libraries
-COPY src/. .
-RUN dotnet publish --ucr -o out
+COPY ./Echo/* Echo/
+COPY ./ServiceRegistry.Interface/* ServiceRegistry.Interface/
+WORKDIR /App/Echo
+RUN dotnet publish --ucr -o ../out
 
 
 # Enable globalization and time zones:
@@ -21,10 +25,13 @@ RUN dotnet publish --ucr -o out
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 
 ENV ASPNETCORE_ENVIRONMENT=Development
-ENV ASPNETCORE_URLS=http://*:7089
-EXPOSE 7089
+ENV ASPNETCORE_URLS=http://*:8001
+ENV SERVICE_REGISTRY_ENDPOINT=http://host.docker.internal:7089/Service
+ENV SERVICE_ENVIRONMENT=dev
+ENV SERVICE_ENDPOINT=http://localhost:8001
+EXPOSE 8001
 
 WORKDIR /App
 COPY --from=build /App/out .
 USER $APP_UID
-ENTRYPOINT ["dotnet", "ServiceRegistry.dll"]
+ENTRYPOINT ["dotnet", "Echo.dll"]

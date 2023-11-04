@@ -9,15 +9,18 @@ api.MapGet("/", () => Results.Ok("Echo"));
 api.MapGet("/{text}", (string text) => Results.Ok(text));
 
 var registryEndpoint = Environment.GetEnvironmentVariable("SERVICE_REGISTRY_ENDPOINT");
+var environment = Environment.GetEnvironmentVariable("SERVICE_ENVIRONMENT");
+var endpoint = Environment.GetEnvironmentVariable("SERVICE_ENDPOINT");
 Timer? serviceTimer = null;
 if (registryEndpoint != null)
 {
+    var http = new HttpClient();
+    var service = (Service)$"{environment}/Echo@{endpoint}/Echo";
+    await http.PostAsync(registryEndpoint, JsonContent.Create(service));
     serviceTimer = new Timer(c =>
     {
-        var http = new HttpClient();
-        var service = (Service)"test/Echo@http://localhost:7089/Echo";
-        http.PostAsync(registryEndpoint, JsonContent.Create(service));
-    }, null, 0, 30000);
+        http.PutAsync(registryEndpoint, JsonContent.Create(service));
+    }, null, 30000, 30000);
 }
 
 app.Run();

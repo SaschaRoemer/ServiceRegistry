@@ -1,7 +1,20 @@
-$RES_GROUP = "learn-7bed6760-8506-4ef5-b77b-354c93c52ef4"
+$RES_GROUP = "learn-400fc7ca-f20f-4452-ac3d-833d55d5e1d9"
 $ACR_NAME = "acr330bd18b"
 $AKV_NAME = "${ACR_NAME}-vault"
-#az acr build --registry $ACR_NAME --image serviceregistry:v1 --file Dockerfile .
+
+# Create Container Registry
+az acr create --resource-group $RES_GROUP --name $ACR_NAME --sku Standard --location eastus
+
+# Build image
+pushd .\src
+az acr build --resource-group $RES_GROUP --registry $ACR_NAME --image serviceregistry:v1 --file Dockerfile-serviceregistry .
+az acr build --resource-group $RES_GROUP --registry $ACR_NAME --image echo:v1 --file Dockerfile-echo .
+popd
+
+<# Local image build for testing
+docker build --pull --rm -f "src\Dockerfile-serviceregistry" -t serviceregistry:v1 "src"
+docker build --pull --rm -f "src\Dockerfile-echo" -t echo:v1 "src"
+#>
 
 write-host "Creating key vault"
 az keyvault create --resource-group $RES_GROUP --name $AKV_NAME

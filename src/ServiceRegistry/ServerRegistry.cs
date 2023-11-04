@@ -77,13 +77,14 @@ public class ServerRegistry : IServerRegistry
         {
             if (set.TryGetValue(service, out var current))
             {
-                if (current.Time < service.Time)
+                var time = DateTime.UtcNow;
+                if (current.Time < time)
                 {
-                    current.Time = service.Time;
-                    _logger.LogService("Renew", "-", current);
-
-                    return;
+                    current.Time = time;
                 }
+
+                _logger.LogService("Renew", "-", current);
+                return;
             }
             _logger.LogService("Renew", "Service not found", service);
         }

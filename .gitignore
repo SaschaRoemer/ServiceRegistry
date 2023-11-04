@@ -1,4 +1,6 @@
-obj/*
-bin/*
+obj
+bin
+src/obj
+src/bin
 src/**/obj/*
 src/**/bin/*
