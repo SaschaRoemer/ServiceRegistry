@@ -11,7 +11,6 @@ public class Service : IEquatable<Service>
     public ServiceKey Key { get; }
     public Location Location { get; }
     public DateTime? Time { get; set; }
-    public long Calls { get; set; }
 
     public static explicit operator Service(string value)
     {

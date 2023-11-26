@@ -1,0 +1,50 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: echo
+    spec:
+      containers:
+      - name: echo
+        image: echo:v1
+        ports:
+        - containerPort: 7089
+        env:
+        - name: ASPNETCORE_URLS
+          value: http://*:8001
+        - name: SERVICE_REGISTRY_ENDPOINT
+          value: http://localhost:7089/Service
+        - name: SERVICE_ENVIRONMENT
+          value: dev
+        - name: SERVICE_ENDPOINT
+          value: http://localhost:8001/Echo
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+  selector:
+    matchLabels:
+      app: echo
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8001
+  selector:
+    app: echo
+
+# kubectl apply -f .\src\Kubernetes-echo.yaml
+# kubectl get pods
+# kubectl get service
+# kubectl scale --replicas=0 -f .\src\Kubernetes-echo.yaml
+# kubectl delete pods -l app=echo-f977c4-dwx8r

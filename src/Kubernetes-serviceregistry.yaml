@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: serviceregistry
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: serviceregistry
+    spec:
+      containers:
+      - name: serviceregistry
+        image: serviceregistry:v1
+        ports:
+        - containerPort: 7089
+        env:
+        - name: ASPNETCORE_URLS
+          value: http://*:7089
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+  selector:
+    matchLabels:
+      app: serviceregistry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: serviceregistry
+spec:
+  type: ClusterIP
+  ports:
+  - port: 7089
+  selector:
+    app: serviceregistry
+
+# kubectl apply -f .\src\Kubernetes-serviceregistry.yaml
+# kubectl get pods
+# kubectl get service
+# kubectl scale --replicas=0 -f .\src\Kubernetes-serviceregistry.yaml
+# kubectl delete pods -l app=serviceregistry-5887f76489-ngg7q
+
+
+
+

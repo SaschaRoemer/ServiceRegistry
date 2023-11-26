@@ -20,15 +20,15 @@ public class ServiceController : ControllerBase
     /// If a service is online under the given key it is returned. If there are multiple services 
     /// online one is selected using round-robin algorithm.
     /// </returns>
-    /// <response code="200" cref="Service">OK</response>
-    /// <response code="400" cref="Service">
+    /// <response code="200" cref="String">OK</response>
+    /// <response code="400" cref="String">
     /// <p>Name must not be null or empty.</p>
     /// <p>Name must not contain / separator.</p>
     /// <p>Environment must not contain / separator.</p>
     /// </response>
     /// <response code="404">Service not found</response>
     [HttpGet("{environment}/{name}", Name = "GetService")]
-    public ActionResult<Service?> GetService(string environment, string name)
+    public ActionResult<string> GetService(string environment, string name)
     {
         if (name == null) return BadRequest("Name must not be null or empty.");
         if (name.Contains("/")) return BadRequest("Name must not contain / separator.");
@@ -38,7 +38,7 @@ public class ServiceController : ControllerBase
 
         if (service == null) return NotFound();
 
-        return Ok(service);
+        return Ok(service.Location.ToString());
     }
 
     /// <summary>Registers a new service</summary>

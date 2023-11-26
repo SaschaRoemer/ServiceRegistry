@@ -11,17 +11,19 @@ public interface IServerRegistry
     void Cancel(Location location);
 }
 
-public class ServerRegistry : IServerRegistry
+public class ServerRegistry : IServerRegistry, IDisposable
 {
     private ILogger<ServerRegistry> _logger;
-    private static TimeSpan ServiceTimeout = TimeSpan.FromMinutes(2);
-    private ConcurrentDictionary<ServiceKey, HashSet<Service>> _registry = new();
-    private ConcurrentDictionary<Location, Service> _locations = new();
+    private ConcurrentDictionary<ServiceKey, ServiceList>? _registry = new();
+    private ConcurrentDictionary<Location, Service>? _locations = new();
+    private bool disposedValue;
+    private Timer? _logTimer;
 
-    public ServerRegistry(
-        ILogger<ServerRegistry> logger)
+    public ServerRegistry(ILogger<ServerRegistry> logger)
     {
         _logger = logger;
+
+        _logTimer = new Timer(c => LogRegistry(), null, 5000, 10000);
     }
 
     public void Cancel(Location location)
@@ -36,17 +38,10 @@ public class ServerRegistry : IServerRegistry
     {
         if (_registry.TryGetValue(key, out var set))
         {
-            var result =
-                set
-                .Where(e => (e.Time + ServiceTimeout) > DateTime.UtcNow)
-                .OrderBy(e => e.Calls)
-                .FirstOrDefault();
-
-            // TODO increment the calls for offline services.
+            var result = set.GetNext();
             
             if (result != null)
             {
-                result.Calls++;
                 _logger.LogService("GetService", "Service found", result);
                 return result;
             }
@@ -63,12 +58,12 @@ public class ServerRegistry : IServerRegistry
         {
             _logger.LogService("Register", "New hashset", service);
             service.Time = DateTime.UtcNow;
-            set = new HashSet<Service>();
+            set = new();
             _registry[service.Key] = set;
         }
         
         set.Add(service);
-        _logger.LogService("Register", "Add service", service, set.Count);
+        _logger.LogService("Register", "Add service", service);
     }
 
     public void Renew(Service service)
@@ -92,5 +87,34 @@ public class ServerRegistry : IServerRegistry
         {
             Register(service);
         }
+    }
+
+    private void LogRegistry()
+    {
+        if (_registry != null)
+        {
+            _logger.LogInformation($"[Registry] {string.Join("; ", _registry.Select(e => $"{e.Key} {string.Join(", ", e.Value.Select(v => $"{v.ToString()}"))}"))}");
+        }
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                _logTimer?.Dispose();
+            }
+
+            _registry = null;
+            _locations = null;
+            disposedValue = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
