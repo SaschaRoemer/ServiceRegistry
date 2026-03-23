@@ -4,6 +4,8 @@
 public class ServiceController : ControllerBase
 {
     private readonly IServerRegistry _registry;
+    private readonly IConfiguration _configuration;
+    private readonly ILogger<ServiceController> _logger;
 
     public ServiceController(
         IServerRegistry registry,
@@ -11,6 +13,8 @@ public class ServiceController : ControllerBase
         ILogger<ServiceController> logger)
     {
         _registry = registry;
+        _configuration = configuration;
+        _logger = logger;
     }
 
     /// <summary>Request a service by key.</summary>

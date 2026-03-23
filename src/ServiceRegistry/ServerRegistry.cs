@@ -14,8 +14,8 @@ public interface IServerRegistry
 public class ServerRegistry : IServerRegistry, IDisposable
 {
     private ILogger<ServerRegistry> _logger;
-    private ConcurrentDictionary<ServiceKey, ServiceList>? _registry = new();
-    private ConcurrentDictionary<Location, Service>? _locations = new();
+    private ConcurrentDictionary<ServiceKey, ServiceList> _registry = new();
+    private ConcurrentDictionary<Location, Service> _locations = new();
     private bool disposedValue;
     private Timer? _logTimer;
 
@@ -28,9 +28,13 @@ public class ServerRegistry : IServerRegistry, IDisposable
 
     public void Cancel(Location location)
     {
-        if (_locations.Remove(location, out var service))
+        if (_locations.TryRemove(location, out var service))
         {
-            var set = _registry[service.Key].Remove(service);
+            if (_registry.TryGetValue(service.Key, out var set))
+            {
+                set.Remove(service);
+                _logger.LogService("Cancel", "Service removed", service);
+            }
         }
     }
 
@@ -91,10 +95,7 @@ public class ServerRegistry : IServerRegistry, IDisposable
 
     private void LogRegistry()
     {
-        if (_registry != null)
-        {
-            _logger.LogInformation($"[Registry] {string.Join("; ", _registry.Select(e => $"{e.Key} {string.Join(", ", e.Value.Select(v => $"{v.ToString()}"))}"))}");
-        }
+        _logger.LogInformation($"[Registry] {string.Join("; ", _registry.Select(e => $"{e.Key} {string.Join(", ", e.Value.Select(v => $"{v.ToString()}"))}"))}");
     }
 
     protected virtual void Dispose(bool disposing)
@@ -106,8 +107,8 @@ public class ServerRegistry : IServerRegistry, IDisposable
                 _logTimer?.Dispose();
             }
 
-            _registry = null;
-            _locations = null;
+            _registry.Clear();
+            _locations.Clear();
             disposedValue = true;
         }
     }

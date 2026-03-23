@@ -21,14 +21,16 @@ api.MapGet("/{text}", async (string text) =>
 
         if (echoForward != null)
         {
-            var http = new HttpClient();
-            var response = await http.GetAsync($"{serviceRegistryEndpoint}/{serviceEnvironment}/{echoForward}");
-            var url = await response.Content.ReadAsStringAsync();
-            logger.LogInformation("[ECHO_FORWARD] {echoForward}, StatusCode: {responseStatusCode}, URL: {url}", echoForward, response.StatusCode, url);
-
-            if (url != null)
+            using (var httpClient = new HttpClient())
             {
-                text = (await (await http.GetAsync($"{url}/{text}")).Content.ReadAsStringAsync()).Trim('"');
+                var response = await httpClient.GetAsync($"{serviceRegistryEndpoint}/{serviceEnvironment}/{echoForward}");
+                var url = await response.Content.ReadAsStringAsync();
+                logger.LogInformation("[ECHO_FORWARD] {echoForward}, StatusCode: {responseStatusCode}, URL: {url}", echoForward, response.StatusCode, url);
+
+                if (url != null)
+                {
+                    text = (await (await httpClient.GetAsync($"{url}/{text}")).Content.ReadAsStringAsync()).Trim('"');
+                }
             }
         }
 
@@ -37,7 +39,7 @@ api.MapGet("/{text}", async (string text) =>
     });
 
 Timer? serviceTimer = null;
-var http = new HttpClient();
+HttpClient? http = null;
 var service = (Service)$"{serviceEnvironment}/{serviceLabel}@{serviceEndpoint}/Echo";
 if (serviceRegistryEndpoint != null)
 {
@@ -47,10 +49,17 @@ if (serviceRegistryEndpoint != null)
         logger.LogInformation("[RegisterService] {service}", service);
         await http.PostAsync(serviceRegistryEndpoint, JsonContent.Create(service));
 
-        serviceTimer = new Timer(c =>
+        serviceTimer = new Timer(async c =>
         {
             logger.LogInformation("[RenewService] {service}", service);
-            http.PutAsync(serviceRegistryEndpoint, JsonContent.Create(service));
+            try
+            {
+                await http.PutAsync(serviceRegistryEndpoint, JsonContent.Create(service));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[RenewService] Failed to renew service");
+            }
         }, null, 30000, 30000);
     }
     catch(Exception ex)
@@ -59,7 +68,26 @@ if (serviceRegistryEndpoint != null)
     }
 }
 
-app.Run();
+app.Lifetime.ApplicationStopping.Register(async () =>
+{
+    serviceTimer?.Dispose();
+    if (serviceRegistryEndpoint != null && http != null)
+    {
+        try
+        {
+            var deleteUrl = $"{serviceRegistryEndpoint}/{System.Web.HttpUtility.UrlEncode(serviceEndpoint)}";
+            logger.LogInformation("[DeleteService] {deleteUrl}", deleteUrl);
+            await http.DeleteAsync(deleteUrl);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "[DeleteService] Failed to delete service registration");
+        }
+        finally
+        {
+            http?.Dispose();
+        }
+    }
+});
 
-serviceTimer?.Dispose();
-http?.DeleteAsync($"serviceRegistryEndpoint/{System.Web.HttpUtility.UrlEncode(serviceEndpoint)}");
+app.Run();
